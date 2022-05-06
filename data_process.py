@@ -61,16 +61,27 @@ if __name__ == '__main__':
 
     action_data = pd.read_csv(args.data_path + 'action_head.csv', parse_dates=['action_time']).drop('module_id',
                                                                                                     axis=1).dropna()
+    # user_id   sku_id          action_time                     type
+    # 0         937922          357022 2018-02-04 08:28:15      1
+
+    #
     all_skus = action_data['sku_id'].unique()
+    #
     all_skus = pd.DataFrame({'sku_id': list(all_skus)})
+    #
     sku_lbe = LabelEncoder()
+    #
     all_skus['sku_id'] = sku_lbe.fit_transform(all_skus['sku_id'])
+    #
     action_data['sku_id'] = sku_lbe.transform(action_data['sku_id'])
 
     print('make session list\n')
     start_time = time.time()
+    #
     session_list = get_session(action_data, use_type=[1, 2, 3, 5])
+    #
     session_list_all = []
+    #
     for item_list in session_list:
         for session in item_list:
             if len(session) > 1:
@@ -94,18 +105,23 @@ if __name__ == '__main__':
     graph_df.to_csv('./data_cache/graph.csv', sep=' ', index=False, header=False)
 
     G = nx.read_edgelist('./data_cache/graph.csv', create_using=nx.DiGraph(), nodetype=None, data=[('weight', int)])
+    #
     walker = RandomWalker(G, p=args.p, q=args.q)
+    #
     print("Preprocess transition probs...")
     walker.preprocess_transition_probs()
 
+    #
     session_reproduce = walker.simulate_walks(num_walks=args.num_walks, walk_length=args.walk_length, workers=4,
                                               verbose=1)
+    #
     session_reproduce = list(filter(lambda x: len(x) > 2, session_reproduce))
 
     # add side info
     product_data = pd.read_csv(args.data_path + 'jdata_product.csv').drop('market_time', axis=1).dropna()
 
     all_skus['sku_id'] = sku_lbe.inverse_transform(all_skus['sku_id'])
+    #
     print("sku nums: " + str(all_skus.count()))
     sku_side_info = pd.merge(all_skus, product_data, on='sku_id', how='left').fillna(0)
 
