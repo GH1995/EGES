@@ -53,7 +53,7 @@ if __name__ == '__main__':
         args.num_feat,
         # 特征数
         feature_lens,
-        # 采样率
+        # 窗口大小
         n_sampled=args.n_sampled,
         # d embedding向量维度
         embedding_dim=args.embedding_dim,
