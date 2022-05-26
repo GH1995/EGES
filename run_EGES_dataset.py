@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -6,7 +5,6 @@ import time
 import argparse
 from EGES_model_dataset import EGES_Model
 from utils import *
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='manual to this script')
@@ -31,13 +29,18 @@ if __name__ == '__main__':
     end_time = time.time()
     print('time consumed for read features: %.2f' % (end_time - start_time))
 
+
     # read data_pair by tf.dataset
     def decode_data_pair(line):
         columns = tf.string_split([line], ' ')
         x = tf.string_to_number(columns.values[0], out_type=tf.int32)
         y = tf.string_to_number(columns.values[1], out_type=tf.int32)
         return x, y
-    dataset = tf.data.TextLineDataset(args.root_path + 'all_pairs').map(decode_data_pair, num_parallel_calls=10).prefetch(500000)
+
+
+    dataset = tf.data.TextLineDataset(args.root_path + 'all_pairs') \
+        .map(decode_data_pair, num_parallel_calls=10) \
+        .prefetch(500000)
     # dataset = dataset.shuffle(256)
     dataset = dataset.repeat(args.epochs)
     dataset = dataset.batch(args.batch_size)  # Batch size to use
@@ -46,8 +49,16 @@ if __name__ == '__main__':
 
     print('read embedding...')
     start_time = time.time()
-    EGES = EGES_Model(len(side_info), feature_lens, side_info, batch_index, batch_labels, args.num_feat,
-                      n_sampled=args.n_sampled, embedding_dim=args.embedding_dim, lr=args.lr)
+    EGES = EGES_Model(
+        len(side_info),
+        feature_lens,
+        side_info,
+        batch_index,
+        batch_labels,
+        args.num_feat,
+        n_sampled=args.n_sampled,
+        embedding_dim=args.embedding_dim,
+        lr=args.lr)
     end_time = time.time()
     print('time consumed for read embedding: %.2f' % (end_time - start_time))
 
@@ -87,7 +98,6 @@ if __name__ == '__main__':
     print('optimization finished...')
     saver = tf.train.Saver()
     saver.save(sess, "model/EGES_cb")
-
 
     # feed_dict_test = {input_col: side_info[:, i] for i, input_col in enumerate(EGES.inputs[:-1])}
     # feed_dict_test[EGES.inputs[-1]] = np.zeros((len(side_info), 1), dtype=np.int32)
