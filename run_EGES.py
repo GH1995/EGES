@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
     #
     EGES = EGES_Model(
-        # 样本数
+        # 节点数
         len(side_info),
         # S
         args.num_feat,

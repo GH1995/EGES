@@ -8,7 +8,7 @@ from utils import *
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='manual to this script')
-    parser.add_argument("--batch_size", type=int, default=2048)
+    parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--n_sampled", type=int, default=10)
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
@@ -21,7 +21,15 @@ if __name__ == '__main__':
     # read train_data
     print('read features...')
     start_time = time.time()
+    # len 34048 side_info
+    # S = 4
+    # [
+    #   [  0,  24, 314,  67],
+    #   ...,
+    #   [34047,   418,  3854,    18]
+    # ]
     side_info = np.loadtxt(args.root_path + 'sku_side_info.csv', dtype=np.int32, delimiter='\t')
+    # [34048, 3663, 4786, 80] 每个 side_info 特征的数目
     feature_lens = []
     for i in range(side_info.shape[1]):
         tmp_len = len(set(side_info[:, i]))
@@ -38,6 +46,12 @@ if __name__ == '__main__':
         return x, y
 
 
+    # len 12999900
+    # [
+    #   [15104, 12212],
+    #   ...,
+    #   []
+    # ]
     dataset = tf.data.TextLineDataset(args.root_path + 'all_pairs') \
         .map(decode_data_pair, num_parallel_calls=10) \
         .prefetch(500000)
@@ -45,18 +59,25 @@ if __name__ == '__main__':
     dataset = dataset.repeat(args.epochs)
     dataset = dataset.batch(args.batch_size)  # Batch size to use
     iterator = dataset.make_one_shot_iterator()
+    # 2921 -> 29149
     batch_index, batch_labels = iterator.get_next()
 
     print('read embedding...')
     start_time = time.time()
     EGES = EGES_Model(
+        # item_id 节点总数
         len(side_info),
+        # 每一列的特征数
         feature_lens,
+        # 二维数组，每一行都是 [input_item_id, 各个边信息, output_item_id]
         side_info,
         batch_index,
         batch_labels,
+        # S
         args.num_feat,
+        # k 窗口大小
         n_sampled=args.n_sampled,
+        # d embedding向量维度
         embedding_dim=args.embedding_dim,
         lr=args.lr)
     end_time = time.time()
